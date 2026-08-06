@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const env_validation_1 = require("./config/env.validation");
 const database_module_1 = require("./database/database.module");
+const users_module_1 = require("./users/users.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -22,6 +23,7 @@ exports.AppModule = AppModule = __decorate([
                 validationSchema: env_validation_1.envValidationSchema,
             }),
             database_module_1.DatabaseModule,
+            users_module_1.UsersModule,
         ],
         controllers: [],
         providers: [],

@@ -6,7 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-
+ 
       useFactory: (configService: ConfigService) => ({
         type: 'mysql' as const,
 
