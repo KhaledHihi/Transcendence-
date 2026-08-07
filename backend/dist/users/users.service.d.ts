@@ -1,17 +1,11 @@
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entities/user.entity';
+import { UserResponseDto } from './dto/user-response.dto';
 export declare class UsersService {
     private readonly usersRepository;
     constructor(usersRepository: Repository<User>);
-    create(createUserDto: CreateUserDto): Promise<{
-        id: number;
-        username: string;
-        email: string;
-        avatarUrl: string | null;
-        role: import("./entities/user.entity").UserRole;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
+    findByEmailForAuth(email: string): Promise<User | null>;
+    findOneById(id: number): Promise<UserResponseDto>;
+    create(createUserDto: CreateUserDto): Promise<UserResponseDto>;
 }

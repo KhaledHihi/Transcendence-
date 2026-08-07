@@ -46,15 +46,34 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
+const user_mapper_1 = require("./mappers/user.mapper");
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const argon2 = __importStar(require("argon2"));
 const typeorm_2 = require("typeorm");
+const database_error_util_1 = require("../common/errors/database-error.util");
 const user_entity_1 = require("./entities/user.entity");
+const common_2 = require("@nestjs/common");
 let UsersService = class UsersService {
     usersRepository;
     constructor(usersRepository) {
         this.usersRepository = usersRepository;
+    }
+    async findByEmailForAuth(email) {
+        return this.usersRepository
+            .createQueryBuilder('user')
+            .addSelect('user.passwordHash')
+            .where('user.email = :email', { email })
+            .getOne();
+    }
+    async findOneById(id) {
+        const user = await this.usersRepository.findOne({
+            where: { id },
+        });
+        if (!user) {
+            throw new common_2.NotFoundException('User not found');
+        }
+        return user_mapper_1.UserMapper.toResponse(user);
     }
     async create(createUserDto) {
         const existingUser = await this.usersRepository.findOne({
@@ -64,7 +83,7 @@ let UsersService = class UsersService {
             ],
         });
         if (existingUser) {
-            throw new common_1.ConflictException('A user with this username or email already exists');
+            throw new common_1.ConflictException('Username or email already exists');
         }
         const passwordHash = await argon2.hash(createUserDto.password);
         const user = this.usersRepository.create({
@@ -72,9 +91,16 @@ let UsersService = class UsersService {
             email: createUserDto.email,
             passwordHash,
         });
-        const savedUser = await this.usersRepository.save(user);
-        const { passwordHash: _passwordHash, ...safeUser } = savedUser;
-        return safeUser;
+        try {
+            const savedUser = await this.usersRepository.save(user);
+            return user_mapper_1.UserMapper.toResponse(savedUser);
+        }
+        catch (error) {
+            if ((0, database_error_util_1.isDuplicateError)(error)) {
+                throw new common_1.ConflictException('Username or email already exists');
+            }
+            throw error;
+        }
     }
 };
 exports.UsersService = UsersService;

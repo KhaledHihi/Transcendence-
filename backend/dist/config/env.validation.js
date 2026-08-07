@@ -49,5 +49,7 @@ exports.envValidationSchema = Joi.object({
     DB_NAME: Joi.string().required(),
     DB_USER: Joi.string().required(),
     DB_PASSWORD: Joi.string().required(),
+    JWT_SECRET: Joi.string().min(32).required(),
+    JWT_EXPIRES_IN: Joi.string().default('15m'),
 });
 //# sourceMappingURL=env.validation.js.map
