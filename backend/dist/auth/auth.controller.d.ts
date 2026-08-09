@@ -1,9 +1,13 @@
 import type { AuthRequest } from './types/auth-request.type';
 import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UsersService } from '../users/users.service';
 export declare class AuthController {
     private readonly authService;
-    constructor(authService: AuthService);
+    private readonly usersService;
+    constructor(authService: AuthService, usersService: UsersService);
+    register(createUserDto: CreateUserDto): Promise<import("../users/dto/user-response.dto").UserResponseDto>;
     login(loginDto: LoginDto): Promise<{
         accessToken: string;
     }>;

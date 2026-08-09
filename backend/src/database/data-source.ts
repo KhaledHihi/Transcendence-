@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
-
 import { User } from '../users/entities/user.entity';
+import { Workspace } from '../workspaces/entities/workspace.entity';
+import { WorkspaceMembership } from '../workspaces/entities/workspace-membership.entity';
 
 export default new DataSource({
   type: 'mysql',
@@ -12,7 +13,11 @@ export default new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 
-  entities: [User],
+  entities: [
+    User,
+    Workspace,
+    WorkspaceMembership,
+  ],
 
   migrations: ['src/database/migrations/*.ts'],
 

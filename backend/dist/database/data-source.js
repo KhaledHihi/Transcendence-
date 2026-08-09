@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../users/entities/user.entity");
+const workspace_entity_1 = require("../workspaces/entities/workspace.entity");
+const workspace_membership_entity_1 = require("../workspaces/entities/workspace-membership.entity");
 exports.default = new typeorm_1.DataSource({
     type: 'mysql',
     host: process.env.DB_HOST,
@@ -10,7 +12,11 @@ exports.default = new typeorm_1.DataSource({
     username: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-    entities: [user_entity_1.User],
+    entities: [
+        user_entity_1.User,
+        workspace_entity_1.Workspace,
+        workspace_membership_entity_1.WorkspaceMembership,
+    ],
     migrations: ['src/database/migrations/*.ts'],
     synchronize: false,
 });

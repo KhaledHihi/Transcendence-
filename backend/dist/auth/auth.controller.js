@@ -18,10 +18,17 @@ const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const login_dto_1 = require("./dto/login.dto");
 const auth_service_1 = require("./auth.service");
 const roles_guard_1 = require("./guards/roles.guard");
+const create_user_dto_1 = require("../users/dto/create-user.dto");
+const users_service_1 = require("../users/users.service");
 let AuthController = class AuthController {
     authService;
-    constructor(authService) {
+    usersService;
+    constructor(authService, usersService) {
         this.authService = authService;
+        this.usersService = usersService;
+    }
+    register(createUserDto) {
+        return this.usersService.create(createUserDto);
     }
     login(loginDto) {
         return this.authService.login(loginDto);
@@ -36,6 +43,13 @@ let AuthController = class AuthController {
     }
 };
 exports.AuthController = AuthController;
+__decorate([
+    (0, common_1.Post)('register'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "register", null);
 __decorate([
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),
@@ -60,6 +74,7 @@ __decorate([
 ], AuthController.prototype, "adminTest", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        users_service_1.UsersService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map
