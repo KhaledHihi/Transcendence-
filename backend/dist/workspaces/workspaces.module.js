@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkspacesModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const users_module_1 = require("../users/users.module");
 const workspace_entity_1 = require("./entities/workspace.entity");
 const workspaces_controller_1 = require("./workspaces.controller");
 const workspaces_service_1 = require("./workspaces.service");
@@ -22,6 +23,7 @@ exports.WorkspacesModule = WorkspacesModule = __decorate([
         imports: [
             typeorm_1.TypeOrmModule.forFeature([workspace_entity_1.Workspace, workspace_membership_entity_1.WorkspaceMembership]),
             auth_module_1.AuthModule,
+            users_module_1.UsersModule,
         ],
         providers: [workspaces_service_1.WorkspacesService],
         controllers: [workspaces_controller_1.WorkspacesController],

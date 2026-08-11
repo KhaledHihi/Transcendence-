@@ -16,16 +16,19 @@ exports.WorkspacesService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const users_service_1 = require("../users/users.service");
 const workspace_entity_1 = require("./entities/workspace.entity");
 const workspace_membership_entity_1 = require("./entities/workspace-membership.entity");
 let WorkspacesService = class WorkspacesService {
     workspacesRepository;
     membershipsRepository;
     dataSource;
-    constructor(workspacesRepository, membershipsRepository, dataSource) {
+    usersService;
+    constructor(workspacesRepository, membershipsRepository, dataSource, usersService) {
         this.workspacesRepository = workspacesRepository;
         this.membershipsRepository = membershipsRepository;
         this.dataSource = dataSource;
+        this.usersService = usersService;
     }
     async create(createWorkspaceDto, ownerId) {
         return this.dataSource.transaction(async (manager) => {
@@ -68,6 +71,60 @@ let WorkspacesService = class WorkspacesService {
         }
         return membership.workspace;
     }
+    async findWorkspaceOrThrow(id) {
+        const workspace = await this.workspacesRepository.findOne({
+            where: { id },
+        });
+        if (!workspace) {
+            throw new common_1.NotFoundException('Workspace not found');
+        }
+        return workspace;
+    }
+    async addMember(workspaceId, requesterId, addMemberDto) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId !== requesterId) {
+            throw new common_1.ForbiddenException('Only the workspace owner can add members');
+        }
+        await this.usersService.findOneById(addMemberDto.userId);
+        const existingMembership = await this.membershipsRepository.findOne({
+            where: {
+                workspaceId,
+                userId: addMemberDto.userId,
+            },
+        });
+        if (existingMembership) {
+            throw new common_1.ConflictException('User is already a member of this workspace');
+        }
+        const membership = this.membershipsRepository.create({
+            workspaceId,
+            userId: addMemberDto.userId,
+            role: workspace_membership_entity_1.WorkspaceRole.MEMBER,
+        });
+        return this.membershipsRepository.save(membership);
+    }
+    async removeMember(workspaceId, requesterId, targetUserId) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId !== requesterId) {
+            throw new common_1.ForbiddenException('Only the workspace owner can remove members');
+        }
+        await this.usersService.findOneById(targetUserId);
+        const membership = await this.membershipsRepository.findOne({
+            where: {
+                workspaceId,
+                userId: targetUserId,
+            },
+        });
+        if (!membership) {
+            throw new common_1.NotFoundException('Workspace membership not found');
+        }
+        if (membership.role === workspace_membership_entity_1.WorkspaceRole.OWNER) {
+            throw new common_1.ForbiddenException('An owner cannot be removed from the workspace');
+        }
+        await this.membershipsRepository.remove(membership);
+        return {
+            message: 'Member removed successfully',
+        };
+    }
 };
 exports.WorkspacesService = WorkspacesService;
 exports.WorkspacesService = WorkspacesService = __decorate([
@@ -76,6 +133,7 @@ exports.WorkspacesService = WorkspacesService = __decorate([
     __param(1, (0, typeorm_1.InjectRepository)(workspace_membership_entity_1.WorkspaceMembership)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.DataSource])
+        typeorm_2.DataSource,
+        users_service_1.UsersService])
 ], WorkspacesService);
 //# sourceMappingURL=workspaces.service.js.map
