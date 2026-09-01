@@ -14,6 +14,8 @@ const database_module_1 = require("./database/database.module");
 const users_module_1 = require("./users/users.module");
 const auth_module_1 = require("./auth/auth.module");
 const workspaces_module_1 = require("./workspaces/workspaces.module");
+const core_1 = require("@nestjs/core");
+const response_interceptor_1 = require("./common/interceptors/response.interceptor");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -30,7 +32,12 @@ exports.AppModule = AppModule = __decorate([
             workspaces_module_1.WorkspacesModule,
         ],
         controllers: [],
-        providers: [],
+        providers: [
+            {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: response_interceptor_1.ResponseInterceptor,
+            },
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

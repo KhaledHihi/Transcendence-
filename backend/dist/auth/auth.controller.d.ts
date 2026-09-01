@@ -1,8 +1,8 @@
-import type { AuthRequest } from './types/auth-request.type';
-import { LoginDto } from './dto/login.dto';
-import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { UsersService } from '../users/users.service';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import type { AuthRequest } from './types/auth-request.type';
 export declare class AuthController {
     private readonly authService;
     private readonly usersService;
@@ -13,6 +13,6 @@ export declare class AuthController {
     }>;
     getProfile(request: AuthRequest): import("./types/jwt-payload.type").JwtPayload | undefined;
     adminTest(): {
-        message: string;
+        allowed: boolean;
     };
 }

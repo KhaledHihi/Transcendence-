@@ -19,6 +19,7 @@ const typeorm_2 = require("typeorm");
 const users_service_1 = require("../users/users.service");
 const workspace_entity_1 = require("./entities/workspace.entity");
 const workspace_membership_entity_1 = require("./entities/workspace-membership.entity");
+const common_2 = require("@nestjs/common");
 let WorkspacesService = class WorkspacesService {
     workspacesRepository;
     membershipsRepository;
@@ -81,10 +82,7 @@ let WorkspacesService = class WorkspacesService {
         return workspace;
     }
     async addMember(workspaceId, requesterId, addMemberDto) {
-        const workspace = await this.findWorkspaceOrThrow(workspaceId);
-        if (workspace.ownerId !== requesterId) {
-            throw new common_1.ForbiddenException('Only the workspace owner can add members');
-        }
+        await this.findOwnedWorkspaceOrThrow(workspaceId, requesterId);
         await this.usersService.findOneById(addMemberDto.userId);
         const existingMembership = await this.membershipsRepository.findOne({
             where: {
@@ -103,10 +101,7 @@ let WorkspacesService = class WorkspacesService {
         return this.membershipsRepository.save(membership);
     }
     async removeMember(workspaceId, requesterId, targetUserId) {
-        const workspace = await this.findWorkspaceOrThrow(workspaceId);
-        if (workspace.ownerId !== requesterId) {
-            throw new common_1.ForbiddenException('Only the workspace owner can remove members');
-        }
+        const workspace = await this.findOwnedWorkspaceOrThrow(workspaceId, requesterId);
         await this.usersService.findOneById(targetUserId);
         const membership = await this.membershipsRepository.findOne({
             where: {
@@ -123,6 +118,86 @@ let WorkspacesService = class WorkspacesService {
         await this.membershipsRepository.remove(membership);
         return {
             message: 'Member removed successfully',
+        };
+    }
+    async transferOwnership(workspaceId, requesterId, transferOwnershipDto) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId !== requesterId) {
+            throw new common_1.ForbiddenException('Only the workspace owner can transfer ownership');
+        }
+        await this.usersService.findOneById(transferOwnershipDto.newOwnerId);
+        const newOwnerMembership = await this.membershipsRepository.findOne({
+            where: {
+                workspaceId,
+                userId: transferOwnershipDto.newOwnerId,
+            },
+        });
+        if (!newOwnerMembership) {
+            throw new common_2.BadRequestException('New owner must already be a workspace member');
+        }
+        return this.dataSource.transaction(async (manager) => {
+            workspace.ownerId =
+                transferOwnershipDto.newOwnerId;
+            await manager.save(workspace);
+            const oldOwnerMembership = await manager.findOne(workspace_membership_entity_1.WorkspaceMembership, {
+                where: {
+                    workspaceId,
+                    userId: requesterId,
+                },
+            });
+            if (!oldOwnerMembership) {
+                throw new common_2.BadRequestException('Current owner membership not found');
+            }
+            oldOwnerMembership.role =
+                workspace_membership_entity_1.WorkspaceRole.MEMBER;
+            newOwnerMembership.role =
+                workspace_membership_entity_1.WorkspaceRole.OWNER;
+            await manager.save(oldOwnerMembership);
+            await manager.save(newOwnerMembership);
+            return {
+                message: 'Workspace ownership transferred successfully',
+            };
+        });
+    }
+    async leaveWorkspace(workspaceId, userId) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId === userId) {
+            throw new common_1.ForbiddenException('Workspace owner must transfer ownership before leaving');
+        }
+        const membership = await this.membershipsRepository.findOne({
+            where: {
+                workspaceId,
+                userId,
+            },
+        });
+        if (!membership) {
+            throw new common_1.NotFoundException('Workspace membership not found');
+        }
+        await this.membershipsRepository.remove(membership);
+        return {
+            message: 'You left the workspace successfully',
+        };
+    }
+    async updateWorkspace(workspaceId, requesterId, updateWorkspaceDto) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId !== requesterId) {
+            throw new common_1.ForbiddenException('Only the workspace owner can update the workspace');
+        }
+        Object.assign(workspace, updateWorkspaceDto);
+        return this.workspacesRepository.save(workspace);
+    }
+    async findOwnedWorkspaceOrThrow(workspaceId, requesterId) {
+        const workspace = await this.findWorkspaceOrThrow(workspaceId);
+        if (workspace.ownerId !== requesterId) {
+            throw new common_1.ForbiddenException('Only the workspace owner can perform this action');
+        }
+        return workspace;
+    }
+    async deleteWorkspace(workspaceId, requesterId) {
+        const workspace = await this.findOwnedWorkspaceOrThrow(workspaceId, requesterId);
+        await this.workspacesRepository.remove(workspace);
+        return {
+            message: 'Workspace deleted successfully',
         };
     }
 };
